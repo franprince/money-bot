@@ -27,6 +27,8 @@ export async function handleCallbackQuery(ctx: Context): Promise<void> {
             const reminderKeyboard = new InlineKeyboard()
                 .text("🔔 En 1h", `remind:1h:gasto`)
                 .text("⏰ Mañana", `remind:tomorrow:gasto`)
+                .text("➕ Otros...", `remind_custom:gasto`)
+                .row()
                 .text("❌ No", "remind:cancel");
 
             await ctx.reply("¿Querés que te lo recuerde más tarde?", {
@@ -66,6 +68,8 @@ export async function handleCallbackQuery(ctx: Context): Promise<void> {
             const reminderKeyboard = new InlineKeyboard()
                 .text("🔔 En 1h", `remind:1h:${description || "gasto"}`)
                 .text("⏰ Mañana", `remind:tomorrow:${description || "gasto"}`)
+                .text("➕ Otros...", `remind_custom:${description || "gasto"}`)
+                .row()
                 .text("❌ No", "remind:cancel");
 
             await ctx.reply("¿Querés que te lo recuerde más tarde?", {
@@ -124,5 +128,78 @@ export async function handleCallbackQuery(ctx: Context): Promise<void> {
         await ctx.editMessageText(`✅ Te recordaré "${messageText}" ${timeLabel}.`);
     }
 
-    await ctx.answerCallbackQuery();
+    // Custom reminder submenu: remind_custom:message
+    if (data.startsWith("remind_custom:")) {
+        const messageText = data.split(":")[1];
+        const keyboard = new InlineKeyboard()
+            .text("🔔 +3h", `remind:3h:${messageText}`)
+            .text("🔔 +6h", `remind:6h:${messageText}`)
+            .row()
+            .text("🔔 +12h", `remind:12h:${messageText}`)
+            .text("🔔 +24h", `remind:24h:${messageText}`)
+            .row()
+            .text("📅 Seleccionar fecha", `remind_date:${messageText}`)
+            .row()
+            .text("⬅️ Volver", `remind_back:${messageText}`);
+
+        await ctx.editMessageText("¿Cuándo querés que te lo recuerde?", {
+            reply_markup: keyboard,
+        });
+    }
+
+    // Go back to main reminder options
+    if (data.startsWith("remind_back:")) {
+        const messageText = data.split(":")[1];
+        const keyboard = new InlineKeyboard()
+            .text("🔔 En 1h", `remind:1h:${messageText}`)
+            .text("⏰ Mañana", `remind:tomorrow:${messageText}`)
+            .text("➕ Otros...", `remind_custom:${messageText}`)
+            .row()
+            .text("❌ No", "remind:cancel");
+
+        await ctx.editMessageText("¿Querés que te lo recuerde más tarde?", {
+            reply_markup: keyboard,
+        });
+    }
+
+    // Prompt for date input
+    if (data.startsWith("remind_date:")) {
+        const messageText = data.split(":")[1];
+        await ctx.reply(`📅 Ingresá cuándo te recuerdo "${messageText}"\nEjemplos: "3h", "18:00", "mañana a las 10", "2026-12-31 15:00"`, {
+            reply_markup: { force_reply: true },
+        });
+        await ctx.answerCallbackQuery();
+        return;
+    }
+
+    if (data.startsWith("remind:")) {
+        const [, time, ...rest] = data.split(":");
+        const messageText = rest.join(":");
+
+        if (time === "cancel") {
+            await ctx.editMessageText("Ok, no habrá recordatorio.");
+            return;
+        }
+
+        let remindAt = new Date();
+        let timeLabel = "";
+
+        if (time.endsWith("h")) {
+            const hours = parseInt(time.replace("h", ""), 10);
+            remindAt.setHours(remindAt.getHours() + hours);
+            timeLabel = `en ${hours} hora${hours > 1 ? "s" : ""}`;
+        } else if (time === "tomorrow") {
+            remindAt.setDate(remindAt.getDate() + 1);
+            remindAt.setHours(9, 0, 0, 0); // 9 AM tomorrow
+            timeLabel = "mañana a las 9:00";
+        }
+
+        insertReminder({
+            userId,
+            message: `Recordatorio: ${messageText}`,
+            remindAt: remindAt.toISOString(),
+        });
+
+        await ctx.editMessageText(`✅ Te recordaré "${messageText}" ${timeLabel}.`);
+    }
 }
