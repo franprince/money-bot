@@ -40,6 +40,13 @@ function migrate(database: Database): void {
       status      TEXT    NOT NULL DEFAULT 'pending'
     )
   `);
+
+    database.run(`
+    CREATE TABLE IF NOT EXISTS metadata (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
 }
 
 export interface InsertExpenseParams {
@@ -233,11 +240,42 @@ export function getPendingReminders(): {
         .all({ $now: now }) as any;
 }
 
+export function getUserPendingReminders(userId: number): {
+    id: number;
+    message: string;
+    remind_at: string;
+}[] {
+    const database = getDb();
+    return database
+        .prepare(
+            `SELECT id, message, remind_at FROM reminders WHERE user_id = $userId AND status = 'pending' ORDER BY remind_at ASC`
+        )
+        .all({ $userId: userId }) as any;
+}
+
 export function markReminderAsSent(id: number): void {
     const database = getDb();
     database
         .prepare(`UPDATE reminders SET status = 'sent' WHERE id = ?`)
         .run(id);
+}
+
+export function getMetadata(key: string): string | null {
+    const database = getDb();
+    const row = database
+        .prepare(`SELECT value FROM metadata WHERE key = ?`)
+        .get(key) as { value: string } | undefined;
+    return row ? row.value : null;
+}
+
+export function setMetadata(key: string, value: string): void {
+    const database = getDb();
+    database
+        .prepare(
+            `INSERT INTO metadata (key, value) VALUES ($key, $value)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+        )
+        .run({ $key: key, $value: value });
 }
 
 export function closeDb(): void {
