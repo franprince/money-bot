@@ -110,6 +110,36 @@ describe("parseExpense", () => {
             expect(result.data.splitDivisor).toBe(4);
             expect(result.data.description).toBe("asado");
         });
+
+        test("support 'k' suffix for thousands (163k)", () => {
+            const result = parseExpense("163k comida");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.amount).toBe(163000);
+        });
+
+        test("support 'K' suffix uppercase (10K)", () => {
+            const result = parseExpense("10K taxi");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.amount).toBe(10000);
+        });
+
+        test("support 'k' with currency symbol ($2k)", () => {
+            const result = parseExpense("$2k burger");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.amount).toBe(2000);
+        });
+
+        test("bug: Parrillada coreana 163000 split 3 (amount in middle, split at end)", () => {
+            const result = parseExpense("Parrillada coreana 163000 split 3");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.amount).toBe(163000);
+            expect(result.data.splitDivisor).toBe(3);
+            expect(result.data.description).toBe("parrillada coreana");
+        });
     });
 
     describe("category auto-detection", () => {

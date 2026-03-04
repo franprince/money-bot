@@ -119,12 +119,10 @@ export const CATEGORY_EMOJI: Record<string, string> = {
  *   - "1.500,50 comida" (European comma format)
  */
 export function parseExpense(text: string): ParseResult | ParseFailure {
-    const raw = text.trim();
+    let normalized = text.trim();
 
-    // Detect currency symbol prefix
+    // 1. Detect currency symbol prefix
     let detectedCurrency = "ARS";
-    let normalized = raw;
-
     for (const [symbol, code] of Object.entries(CURRENCY_SYMBOLS)) {
         if (normalized.startsWith(symbol)) {
             detectedCurrency = code;
@@ -133,12 +131,24 @@ export function parseExpense(text: string): ParseResult | ParseFailure {
         }
     }
 
-    const tokens = normalized.split(/\s+/);
-    if (tokens.length === 0) {
+    // 2. Split detection: "split X", "dividido X", "shared X", "compartido X"
+    // We do this BEFORE tokenizing to protect the split number from being picked as the amount
+    let splitDivisor: number | undefined;
+    const splitRegex = /(split|dividido|shared|compartido)(\s+(entre|por))?\s+(\d+)/i;
+    const splitMatch = normalized.match(splitRegex);
+
+    if (splitMatch) {
+        splitDivisor = parseInt(splitMatch[4], 10);
+        // Remove the split part from the text
+        normalized = normalized.replace(splitRegex, " ").replace(/\s+/g, " ").trim();
+    }
+
+    let tokens = normalized.split(/\s+/);
+    if (tokens.length === 0 || (tokens.length === 1 && tokens[0] === "")) {
         return { success: false, reason: "Empty message" };
     }
 
-    // Check if first token is a known currency code
+    // 3. Check if first token is a known currency code
     if (
         tokens.length > 1 &&
         CURRENCY_CODES.has(tokens[0].toLowerCase())
@@ -147,43 +157,35 @@ export function parseExpense(text: string): ParseResult | ParseFailure {
         tokens.shift();
     }
 
-    // Try to parse amount — first or last token
+    // 4. Try to parse amount — search all tokens
     let amount: number | null = null;
     let amountIndex = -1;
 
-    for (const index of [0, tokens.length - 1]) {
+    // Favor start or end of message for amount if multiple numbers are present
+    const indicesToCheck = [0, tokens.length - 1, ...Array.from({ length: tokens.length }, (_, i) => i).filter(i => i !== 0 && i !== tokens.length - 1)];
+
+    for (const index of indicesToCheck) {
+        if (tokens[index] === undefined) continue;
         const parsed = parseAmount(tokens[index]);
-        if (parsed !== null) {
+        if (parsed !== null && parsed > 0) {
             amount = parsed;
             amountIndex = index;
             break;
         }
     }
 
-    if (amount === null || amount <= 0) {
+    if (amount === null) {
         return {
             success: false,
             reason: "Could not find a valid amount in the message",
         };
     }
 
+    // 5. Build description and detect category
     const descTokens = tokens.filter((_, i) => i !== amountIndex);
-    let descText = descTokens.join(" ").toLowerCase();
-
-    // Split detection: "split X", "dividido X", "shared X", "compartido X"
-    let splitDivisor: number | undefined;
-    const splitRegex = /(split|dividido|shared|compartido)(\s+(entre|por))?\s+(\d+)/i;
-    const splitMatch = descText.match(splitRegex);
-
-    if (splitMatch) {
-        splitDivisor = parseInt(splitMatch[4], 10);
-        // Remove the split part from description
-        descText = descText.replace(splitRegex, "").replace(/\s+/g, " ").trim();
-    }
+    const descText = descTokens.join(" ").toLowerCase().trim();
 
     const filteredDescTokens = descText.split(/\s+/).filter(Boolean);
-
-    // Try to detect category from description tokens
     let category: string | null = null;
     for (const token of filteredDescTokens) {
         if (KNOWN_CATEGORIES[token]) {
@@ -215,34 +217,39 @@ function parseAmount(token: string): number | null {
     // Reject negative values
     if (token.startsWith("-")) return null;
 
+    let multiplier = 1;
+    let amountToken = token;
+
+    if (token.toLowerCase().endsWith("k")) {
+        multiplier = 1000;
+        amountToken = token.slice(0, -1);
+    }
+
     // Remove non-numeric except . and ,
-    const cleaned = token.replace(/[^\d.,]/g, "");
+    const cleaned = amountToken.replace(/[^\d.,]/g, "");
     if (!cleaned) return null;
+
+    let result: number | null = null;
 
     // European/AR format: "1.500,50" or plain "1500,50"
     if (/\d+\.\d{3},\d{1,2}$/.test(cleaned)) {
-        const n = parseFloat(cleaned.replace(/\./g, "").replace(",", "."));
-        return isFinite(n) ? n : null;
+        result = parseFloat(cleaned.replace(/\./g, "").replace(",", "."));
     }
-
     // Dot as thousand separator (no decimals): "163.000" or "1.250.000"
-    if (/^\d{1,3}(\.\d{3})+$/.test(cleaned)) {
-        const n = parseFloat(cleaned.replace(/\./g, ""));
-        return isFinite(n) ? n : null;
+    else if (/^\d{1,3}(\.\d{3})+$/.test(cleaned)) {
+        result = parseFloat(cleaned.replace(/\./g, ""));
     }
-
     // Comma as decimal: "1500,50"
-    if (/,\d{1,2}$/.test(cleaned)) {
-        const n = parseFloat(cleaned.replace(/\./g, "").replace(",", "."));
-        return isFinite(n) ? n : null;
+    else if (/,\d{1,2}$/.test(cleaned)) {
+        result = parseFloat(cleaned.replace(/\./g, "").replace(",", "."));
     }
-
     // Comma as thousand separator: "1,500"
-    if (/,\d{3}$/.test(cleaned)) {
-        const n = parseFloat(cleaned.replace(/,/g, ""));
-        return isFinite(n) ? n : null;
+    else if (/,\d{3}$/.test(cleaned)) {
+        result = parseFloat(cleaned.replace(/,/g, ""));
+    } else {
+        result = parseFloat(cleaned.replace(/,/g, ""));
     }
 
-    const n = parseFloat(cleaned.replace(/,/g, ""));
-    return isFinite(n) ? n : null;
+    if (result === null || !isFinite(result)) return null;
+    return result * multiplier;
 }
