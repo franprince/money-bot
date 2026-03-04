@@ -1,13 +1,34 @@
 import { InlineKeyboard, type Context } from "grammy";
 import { parseExpense, CATEGORY_LIST, CATEGORY_EMOJI } from "../../parser/parseExpense";
-import { insertExpense } from "../../db/database";
+import { insertExpense, insertReminder } from "../../db/database";
 import { formatAmount } from "../../utils/formatters";
+import { parseReminderDate } from "../../utils/dateParser";
 
 export async function handleAddExpense(ctx: Context): Promise<void> {
     const text = ctx.message?.text;
     const userId = ctx.from?.id;
 
     if (!text || !userId) return;
+
+    // Handle reply to reminder date prompt
+    if (ctx.message?.reply_to_message?.text?.includes("Ingresá cuándo te recuerdo")) {
+        const promptText = ctx.message.reply_to_message.text;
+        const messageMatch = promptText.match(/"(.+)"/);
+        const messageText = messageMatch ? messageMatch[1] : "gasto";
+
+        const remindAt = parseReminderDate(text);
+        if (remindAt) {
+            insertReminder({
+                userId,
+                message: `Recordatorio: ${messageText}`,
+                remindAt: remindAt.toISOString(),
+            });
+            await ctx.reply(`✅ Te recordaré "${messageText}" el ${remindAt.toLocaleString("es-AR")}.`);
+        } else {
+            await ctx.reply("❌ No pude entender esa fecha. Por favor, intentá de nuevo con algo como '3h' o '18:00'.");
+        }
+        return;
+    }
 
     const result = parseExpense(text);
 
@@ -88,6 +109,8 @@ export async function handleAddExpense(ctx: Context): Promise<void> {
             const reminderKeyboard = new InlineKeyboard()
                 .text("🔔 En 1h", `remind:1h:${description || "gasto"}`)
                 .text("⏰ Mañana", `remind:tomorrow:${description || "gasto"}`)
+                .text("➕ Otros...", `remind_custom:${description || "gasto"}`)
+                .row()
                 .text("❌ No", "remind:cancel");
 
             await ctx.reply("¿Querés que te lo recuerde más tarde?", {
