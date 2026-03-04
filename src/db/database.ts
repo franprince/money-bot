@@ -147,6 +147,48 @@ export function deleteExpense(
     return result.changes > 0;
 }
 
+export function updateExpenseAmount(
+    userId: number,
+    expenseId: number,
+    amount: number
+): boolean {
+    const database = getDb();
+    const result = database
+        .prepare(
+            `UPDATE expenses SET amount = $amount WHERE id = $id AND user_id = $userId`
+        )
+        .run({ $amount: amount, $id: expenseId, $userId: userId });
+    return result.changes > 0;
+}
+
+export function updateExpenseDescription(
+    userId: number,
+    expenseId: number,
+    description: string | null
+): boolean {
+    const database = getDb();
+    const result = database
+        .prepare(
+            `UPDATE expenses SET description = $description WHERE id = $id AND user_id = $userId`
+        )
+        .run({ $description: description, $id: expenseId, $userId: userId });
+    return result.changes > 0;
+}
+
+export function updateExpenseCategory(
+    userId: number,
+    expenseId: number,
+    category: string | null
+): boolean {
+    const database = getDb();
+    const result = database
+        .prepare(
+            `UPDATE expenses SET category = $category WHERE id = $id AND user_id = $userId`
+        )
+        .run({ $category: category, $id: expenseId, $userId: userId });
+    return result.changes > 0;
+}
+
 export function closeDb(): void {
     if (db) {
         db.close();

@@ -158,6 +158,65 @@ describe("database operations", () => {
         expect(result.changes).toBe(0);
     });
 
+    function updateAmount(userId: number, id: number, amount: number) {
+        return db
+            .prepare(
+                `UPDATE expenses SET amount = $amount WHERE id = $id AND user_id = $userId`
+            )
+            .run({ $amount: amount, $id: id, $userId: userId });
+    }
+
+    function updateDescription(userId: number, id: number, desc: string | null) {
+        return db
+            .prepare(
+                `UPDATE expenses SET description = $description WHERE id = $id AND user_id = $userId`
+            )
+            .run({ $description: desc, $id: id, $userId: userId });
+    }
+
+    function updateCategory(userId: number, id: number, cat: string | null) {
+        return db
+            .prepare(
+                `UPDATE expenses SET category = $category WHERE id = $id AND user_id = $userId`
+            )
+            .run({ $category: cat, $id: id, $userId: userId });
+    }
+
+    test("updates an expense amount", () => {
+        const expense = helpers.insert({ userId: 1, amount: 500 });
+        const result = updateAmount(1, expense.id, 1500);
+        expect(result.changes).toBe(1);
+
+        const from = "2000-01-01T00:00:00.000Z";
+        const to = "2100-01-01T00:00:00.000Z";
+        const after = helpers.summary(1, from, to);
+        expect(after.grandTotal).toBe(1500);
+    });
+
+    test("updates an expense description", () => {
+        const expense = helpers.insert({ userId: 1, amount: 500, description: "old" });
+        const result = updateDescription(1, expense.id, "new");
+        expect(result.changes).toBe(1);
+
+        const row = db.prepare("SELECT description FROM expenses WHERE id = ?").get(expense.id) as { description: string };
+        expect(row.description).toBe("new");
+    });
+
+    test("updates an expense category", () => {
+        const expense = helpers.insert({ userId: 1, amount: 500, category: "food" });
+        const result = updateCategory(1, expense.id, "transport");
+        expect(result.changes).toBe(1);
+
+        const row = db.prepare("SELECT category FROM expenses WHERE id = ?").get(expense.id) as { category: string };
+        expect(row.category).toBe("transport");
+    });
+
+    test("update fails for wrong user", () => {
+        const expense = helpers.insert({ userId: 1, amount: 500 });
+        const result = updateAmount(2, expense.id, 1500);
+        expect(result.changes).toBe(0);
+    });
+
     test("summary returns zero totals when no expenses exist", () => {
         const result = helpers.summary(
             1,

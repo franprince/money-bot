@@ -20,6 +20,9 @@ const HELP_TEXT = `
 *Administrar gastos:*
   /lista — últimos 10 gastos con IDs
   /borrar 42 — eliminar gasto #42
+  /editar monto 42 1500 — editar monto del gasto #42
+  /editar descripcion 42 almuerzo — editar descripción
+  /editar categoria 42 comida — editar categoría
 
 *Categorías detectadas automáticamente:*
   comida · transporte · mercado · salud · entretenimiento · ropa · servicios
