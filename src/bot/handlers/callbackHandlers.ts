@@ -1,12 +1,43 @@
 import { type Context, InlineKeyboard } from "grammy";
-import { insertExpense, insertReminder } from "../../db/database";
+import { insertExpense, insertReminder, updateExpenseCategory } from "../../db/database";
 import { formatAmount } from "../../utils/formatters";
+import { CATEGORY_EMOJI } from "../../parser/parseExpense";
 
 export async function handleCallbackQuery(ctx: Context): Promise<void> {
     const data = ctx.callbackQuery?.data;
     const userId = ctx.from?.id;
 
     if (!data || !userId) return;
+
+    // Category handling: cat:expenseId:categoryName
+    if (data.startsWith("cat:")) {
+        const [, idStr, category] = data.split(":");
+        const expenseId = parseInt(idStr, 10);
+        const finalCategory = category === "none" ? null : category;
+
+        const success = updateExpenseCategory(userId, expenseId, finalCategory);
+
+        if (success) {
+            const catLabel = finalCategory ? `${CATEGORY_EMOJI[finalCategory] || ""} ${finalCategory}` : "ninguna";
+            await ctx.editMessageText(`✅ Categoría asignada: *${catLabel}*`, {
+                parse_mode: "Markdown",
+            });
+
+            // Prompt for reminder after category is set
+            const reminderKeyboard = new InlineKeyboard()
+                .text("🔔 En 1h", `remind:1h:gasto`)
+                .text("⏰ Mañana", `remind:tomorrow:gasto`)
+                .text("❌ No", "remind:cancel");
+
+            await ctx.reply("¿Querés que te lo recuerde más tarde?", {
+                reply_markup: reminderKeyboard,
+            });
+        } else {
+            await ctx.answerCallbackQuery("⚠️ No se pudo asignar la categoría.");
+        }
+        await ctx.answerCallbackQuery();
+        return;
+    }
 
     // Split handling: split:type:amount:currency:category:description
     if (data.startsWith("split:")) {

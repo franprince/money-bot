@@ -36,6 +36,8 @@ const KNOWN_CATEGORIES: Record<string, string> = {
     breakfast: "food",
     cafe: "food",
     coffee: "food",
+    parrilla: "food",
+    asado: "food",
 
     transport: "transport",
     transporte: "transport",
@@ -84,6 +86,26 @@ const KNOWN_CATEGORIES: Record<string, string> = {
     internet: "utilities",
     telefono: "utilities",
     phone: "utilities",
+};
+
+export const CATEGORY_LIST = [
+    "food",
+    "transport",
+    "market",
+    "health",
+    "entertainment",
+    "clothing",
+    "utilities",
+];
+
+export const CATEGORY_EMOJI: Record<string, string> = {
+    food: "🍔",
+    transport: "🚕",
+    market: "🛒",
+    health: "💊",
+    entertainment: "🎬",
+    clothing: "👗",
+    utilities: "⚡",
 };
 
 /**

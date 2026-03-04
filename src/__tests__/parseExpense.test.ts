@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseExpense } from "../parser/parseExpense";
+import { parseExpense, CATEGORY_LIST } from "../parser/parseExpense";
 
 describe("parseExpense", () => {
     describe("valid formats", () => {
@@ -168,6 +168,16 @@ describe("parseExpense", () => {
         test("negative amount fails", () => {
             const result = parseExpense("-100 lunch");
             expect(result.success).toBe(false);
+        });
+    });
+
+    describe("category list", () => {
+        test("CATEGORY_LIST contains expected categories", () => {
+            expect(CATEGORY_LIST).toContain("food");
+            expect(CATEGORY_LIST).toContain("transport");
+            expect(CATEGORY_LIST).toContain("market");
+            expect(CATEGORY_LIST).toContain("utilities");
+            expect(CATEGORY_LIST.length).toBeGreaterThan(5);
         });
     });
 });

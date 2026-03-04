@@ -1,5 +1,5 @@
 import { InlineKeyboard, type Context } from "grammy";
-import { parseExpense } from "../../parser/parseExpense";
+import { parseExpense, CATEGORY_LIST, CATEGORY_EMOJI } from "../../parser/parseExpense";
 import { insertExpense } from "../../db/database";
 import { formatAmount } from "../../utils/formatters";
 
@@ -65,15 +65,35 @@ export async function handleAddExpense(ctx: Context): Promise<void> {
             { parse_mode: "Markdown" }
         );
 
-        // Prompt for reminder
-        const reminderKeyboard = new InlineKeyboard()
-            .text("🔔 En 1h", `remind:1h:${description || "gasto"}`)
-            .text("⏰ Mañana", `remind:tomorrow:${description || "gasto"}`)
-            .text("❌ No", "remind:cancel");
+        if (!category) {
+            // Ask for category
+            const catKeyboard = new InlineKeyboard();
+            // Group in rows of 2
+            for (let i = 0; i < CATEGORY_LIST.length; i += 2) {
+                const cat1 = CATEGORY_LIST[i];
+                const cat2 = CATEGORY_LIST[i + 1];
+                catKeyboard.text(`${CATEGORY_EMOJI[cat1]} ${cat1}`, `cat:${expense.id}:${cat1}`);
+                if (cat2) {
+                    catKeyboard.text(`${CATEGORY_EMOJI[cat2]} ${cat2}`, `cat:${expense.id}:${cat2}`);
+                }
+                catKeyboard.row();
+            }
+            catKeyboard.text("❌ Ninguna", `cat:${expense.id}:none`);
 
-        await ctx.reply("¿Querés que te lo recuerde más tarde?", {
-            reply_markup: reminderKeyboard,
-        });
+            await ctx.reply("📂 No pude detectar la categoría. ¿Querés asignarle una?", {
+                reply_markup: catKeyboard,
+            });
+        } else {
+            // Prompt for reminder
+            const reminderKeyboard = new InlineKeyboard()
+                .text("🔔 En 1h", `remind:1h:${description || "gasto"}`)
+                .text("⏰ Mañana", `remind:tomorrow:${description || "gasto"}`)
+                .text("❌ No", "remind:cancel");
+
+            await ctx.reply("¿Querés que te lo recuerde más tarde?", {
+                reply_markup: reminderKeyboard,
+            });
+        }
     } catch (error) {
         console.error("Error saving expense:", error);
         await ctx.reply("❌ No se pudo guardar el gasto. Por favor, intentá de nuevo.");
