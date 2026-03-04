@@ -64,7 +64,23 @@ function makeHelpers(db: Database) {
             .run({ $id: id, $userId: userId });
     }
 
-    return { insert, summary, deleteById };
+    function insertReminder(userId: number, message: string, remindAt: string) {
+        return db
+            .prepare(
+                `INSERT INTO reminders (user_id, message, remind_at) VALUES ($userId, $message, $remindAt)`
+            )
+            .run({ $userId: userId, $message: message, $remindAt: remindAt });
+    }
+
+    function getUserReminders(userId: number) {
+        return db
+            .prepare(
+                `SELECT message, remind_at FROM reminders WHERE user_id = $userId AND status = 'pending' ORDER BY remind_at ASC`
+            )
+            .all({ $userId: userId }) as { message: string; remind_at: string }[];
+    }
+
+    return { insert, summary, deleteById, insertReminder, getUserReminders };
 }
 
 describe("database operations", () => {
@@ -226,5 +242,16 @@ describe("database operations", () => {
         expect(result.grandTotal).toBe(0);
         expect(result.totalCount).toBe(0);
         expect(result.byCategory).toHaveLength(0);
+    });
+
+    test("retrieves pending reminders for user", () => {
+        helpers.insertReminder(1, "remind 1", "2026-03-04T12:00:00.000Z");
+        helpers.insertReminder(1, "remind 2", "2026-03-04T11:00:00.000Z");
+        helpers.insertReminder(2, "remind 3", "2026-03-04T13:00:00.000Z");
+
+        const reminders = helpers.getUserReminders(1);
+        expect(reminders).toHaveLength(2);
+        expect(reminders[0].message).toBe("remind 2"); // earlier first
+        expect(reminders[1].message).toBe("remind 1");
     });
 });
