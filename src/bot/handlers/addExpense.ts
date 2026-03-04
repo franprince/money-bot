@@ -31,11 +31,11 @@ export async function handleAddExpense(ctx: Context): Promise<void> {
         const descLabel = description ? ` ${description}` : "";
 
         await ctx.reply(
-            `✅ Saved!${descLabel}${categoryLabel}\n*${formatAmount(amount, currency)}* — ID #${expense.id}`,
+            `✅ ¡Guardado!${descLabel}${categoryLabel}\n*${formatAmount(amount, currency)}* — ID #${expense.id}`,
             { parse_mode: "Markdown" }
         );
     } catch (error) {
         console.error("Error saving expense:", error);
-        await ctx.reply("❌ Failed to save expense. Please try again.");
+        await ctx.reply("❌ No se pudo guardar el gasto. Por favor, intentá de nuevo.");
     }
 }

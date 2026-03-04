@@ -10,12 +10,12 @@ export async function handleList(ctx: Context): Promise<void> {
         const expenses = getRecentExpenses(userId, 10);
 
         if (expenses.length === 0) {
-            await ctx.reply("📭 No expenses recorded yet.");
+            await ctx.reply("📭 Todavía no registraste ningún gasto.");
             return;
         }
 
         const lines = expenses.map((e) => {
-            const date = new Date(e.created_at).toLocaleDateString("en-US", {
+            const date = new Date(e.created_at).toLocaleDateString("es-AR", {
                 month: "short",
                 day: "numeric",
             });
@@ -24,11 +24,12 @@ export async function handleList(ctx: Context): Promise<void> {
             return `#${e.id} · ${date} · *${formatAmount(e.amount, e.currency)}*${desc}${category}`;
         });
 
-        await ctx.reply(`📋 *Last ${expenses.length} expenses:*\n\n${lines.join("\n")}`, {
-            parse_mode: "Markdown",
-        });
+        await ctx.reply(
+            `📋 *Últimos ${expenses.length} gastos:*\n\n${lines.join("\n")}`,
+            { parse_mode: "Markdown" }
+        );
     } catch (error) {
         console.error("Error fetching expenses:", error);
-        await ctx.reply("❌ Failed to fetch expenses. Please try again.");
+        await ctx.reply("❌ No se pudieron obtener los gastos. Intentá de nuevo.");
     }
 }

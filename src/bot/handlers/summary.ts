@@ -22,13 +22,13 @@ async function sendSummary(
         await ctx.reply(formatSummary(result, label), { parse_mode: "Markdown" });
     } catch (error) {
         console.error("Error fetching summary:", error);
-        await ctx.reply("❌ Failed to fetch summary. Please try again.");
+        await ctx.reply("❌ No se pudo obtener el resumen. Intentá de nuevo.");
     }
 }
 
 export async function handleToday(ctx: Context): Promise<void> {
     const today = new Date();
-    const label = today.toLocaleDateString("en-US", {
+    const label = today.toLocaleDateString("es-AR", {
         weekday: "long",
         year: "numeric",
         month: "long",
@@ -38,12 +38,12 @@ export async function handleToday(ctx: Context): Promise<void> {
 }
 
 export async function handleWeek(ctx: Context): Promise<void> {
-    await sendSummary(ctx, weekRange(), "This week");
+    await sendSummary(ctx, weekRange(), "Esta semana");
 }
 
 export async function handleMonth(ctx: Context): Promise<void> {
     const now = new Date();
-    const label = now.toLocaleDateString("en-US", {
+    const label = now.toLocaleDateString("es-AR", {
         month: "long",
         year: "numeric",
     });
@@ -56,14 +56,14 @@ export async function handleYear(ctx: Context): Promise<void> {
 }
 
 /**
- * /summary YYYY-MM-DD YYYY-MM-DD
+ * /resumen YYYY-MM-DD YYYY-MM-DD
  */
 export async function handleCustomSummary(ctx: Context): Promise<void> {
     const args = ctx.match as string | undefined;
 
     if (!args) {
         await ctx.reply(
-            "📅 Usage: `/summary YYYY-MM-DD YYYY-MM-DD`\nExample: `/summary 2026-01-01 2026-03-04`",
+            "📅 Uso: `/resumen YYYY-MM-DD YYYY-MM-DD`\nEjemplo: `/resumen 2026-01-01 2026-03-04`",
             { parse_mode: "Markdown" }
         );
         return;
@@ -72,7 +72,7 @@ export async function handleCustomSummary(ctx: Context): Promise<void> {
     const parts = args.trim().split(/\s+/);
     if (parts.length !== 2) {
         await ctx.reply(
-            "❌ Invalid format. Usage: `/summary YYYY-MM-DD YYYY-MM-DD`",
+            "❌ Formato inválido. Uso: `/resumen YYYY-MM-DD YYYY-MM-DD`",
             { parse_mode: "Markdown" }
         );
         return;
@@ -81,7 +81,7 @@ export async function handleCustomSummary(ctx: Context): Promise<void> {
     const range = customRange(parts[0], parts[1]);
     if (!range) {
         await ctx.reply(
-            "❌ Invalid dates. Make sure start date ≤ end date and format is YYYY-MM-DD."
+            "❌ Fechas inválidas. Asegurate de que la fecha inicial sea menor o igual a la final y el formato sea YYYY-MM-DD."
         );
         return;
     }

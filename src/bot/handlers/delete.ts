@@ -9,7 +9,7 @@ export async function handleDelete(ctx: Context): Promise<void> {
 
     if (!args || !args.trim()) {
         await ctx.reply(
-            "🗑 Usage: `/delete <id>`\nExample: `/delete 42`\n\nUse /list to see expense IDs.",
+            "🗑 Uso: `/borrar <id>`\nEjemplo: `/borrar 42`\n\nUsá /lista para ver los IDs de tus gastos.",
             { parse_mode: "Markdown" }
         );
         return;
@@ -17,19 +17,19 @@ export async function handleDelete(ctx: Context): Promise<void> {
 
     const id = parseInt(args.trim(), 10);
     if (isNaN(id) || id <= 0) {
-        await ctx.reply("❌ Invalid ID. Please provide a valid positive number.");
+        await ctx.reply("❌ ID inválido. Por favor ingresá un número positivo válido.");
         return;
     }
 
     try {
         const deleted = deleteExpense(userId, id);
         if (deleted) {
-            await ctx.reply(`✅ Expense #${id} deleted.`);
+            await ctx.reply(`✅ Gasto #${id} eliminado.`);
         } else {
-            await ctx.reply(`⚠️ Expense #${id} not found or doesn't belong to you.`);
+            await ctx.reply(`⚠️ No se encontró el gasto #${id} o no te pertenece.`);
         }
     } catch (error) {
         console.error("Error deleting expense:", error);
-        await ctx.reply("❌ Failed to delete expense. Please try again.");
+        await ctx.reply("❌ No se pudo eliminar el gasto. Intentá de nuevo.");
     }
 }

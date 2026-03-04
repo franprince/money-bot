@@ -1,29 +1,30 @@
 import type { Context } from "grammy";
 
 const HELP_TEXT = `
-💰 *Money Bot — Expense Tracker*
+💰 *Money Bot — Registro de Gastos*
 
-*Track an expense* — just send a message:
-  \`500 lunch\`
+*Registrar un gasto* — solo enviá un mensaje:
+  \`500 almuerzo\`
   \`$1200 supermercado\`
   \`uber 850\`
-  \`USD 50 coffee\`
+  \`USD 50 café\`
+  \`nafta 3000\`
 
-*View summaries:*
-  /today — today's expenses
-  /week — this week (Mon–Sun)
-  /month — this calendar month
-  /year — this calendar year
-  /summary 2026-01-01 2026-03-04 — custom range
+*Ver resúmenes:*
+  /hoy — gastos de hoy
+  /semana — esta semana (Lun–Dom)
+  /mes — este mes
+  /anio — este año
+  /resumen 2026-01-01 2026-03-04 — período personalizado
 
-*Manage expenses:*
-  /list — last 10 expenses with IDs
-  /delete 42 — delete expense #42
+*Administrar gastos:*
+  /lista — últimos 10 gastos con IDs
+  /borrar 42 — eliminar gasto #42
 
-*Auto-detected categories:*
-  food · transport · market · health · entertainment · clothing · utilities
+*Categorías detectadas automáticamente:*
+  comida · transporte · mercado · salud · entretenimiento · ropa · servicios
 `.trim();
 
 export async function handleHelp(ctx: Context): Promise<void> {
-    await ctx.reply(HELP_TEXT, { parse_mode: "Markdown" });
+  await ctx.reply(HELP_TEXT, { parse_mode: "Markdown" });
 }

@@ -19,22 +19,22 @@ export function createBot(token: string): Bot {
         bot.use(async (ctx, next) => {
             const userId = ctx.from?.id;
             if (!userId || !allowedUserIds.has(userId)) {
-                await ctx.reply("⛔ You are not authorized to use this bot.");
+                await ctx.reply("⛔ No tenés autorización para usar este bot.");
                 return;
             }
             await next();
         });
     }
 
-    // Commands
-    bot.command(["start", "help"], handleHelp);
-    bot.command("today", handleToday);
-    bot.command("week", handleWeek);
-    bot.command("month", handleMonth);
-    bot.command("year", handleYear);
-    bot.command("summary", handleCustomSummary);
-    bot.command("list", handleList);
-    bot.command("delete", handleDelete);
+    // Commands — Spanish primary, English aliases for convenience
+    bot.command(["start", "help", "ayuda"], handleHelp);
+    bot.command(["hoy", "today"], handleToday);
+    bot.command(["semana", "week"], handleWeek);
+    bot.command(["mes", "month"], handleMonth);
+    bot.command(["anio", "year"], handleYear);
+    bot.command(["resumen", "summary"], handleCustomSummary);
+    bot.command(["lista", "list"], handleList);
+    bot.command(["borrar", "delete"], handleDelete);
 
     // Plain text messages → try to parse as expense
     bot.on("message:text", handleAddExpense);
