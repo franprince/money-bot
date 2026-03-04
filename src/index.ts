@@ -1,6 +1,7 @@
 import { createBot } from "./bot/bot";
 import { startRemindersWorker, checkPendingReminders } from "./bot/remindersWorker";
 import { notifyChangelog } from "./bot/changelogNotifier";
+import { startBackupWorker } from "./bot/backupWorker";
 
 const token = process.env.BOT_TOKEN;
 if (!token) {
@@ -12,6 +13,7 @@ console.log("🤖 Starting Money Bot...");
 
 const bot = createBot(token);
 startRemindersWorker(bot);
+startBackupWorker(bot);
 
 // On startup: notify changelog and check pending reminders immediately
 (async () => {

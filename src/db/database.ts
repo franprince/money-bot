@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import type { Expense, ExpenseSummary, SummaryResult } from "../types";
 
-const DB_PATH = process.env.DB_PATH ?? "data/expenses.db";
+export const DB_PATH = process.env.DB_PATH ?? "data/expenses.db";
 
 let db: Database;
 
@@ -282,6 +282,19 @@ export function closeDb(): void {
     if (db) {
         db.close();
     }
+}
+
+export function backupDb(targetPath: string): void {
+    const database = getDb();
+    // VACUUM INTO fails if the file already exists
+    try {
+        if (require("node:fs").existsSync(targetPath)) {
+            require("node:fs").unlinkSync(targetPath);
+        }
+    } catch (e) {
+        // ignore errors on delete
+    }
+    database.run(`VACUUM INTO '${targetPath}'`);
 }
 
 /** Exposed only for testing — creates an isolated in-memory DB */
