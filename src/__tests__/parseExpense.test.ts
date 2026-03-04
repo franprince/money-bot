@@ -140,6 +140,40 @@ describe("parseExpense", () => {
             expect(result.data.splitDivisor).toBe(3);
             expect(result.data.description).toBe("parrillada coreana");
         });
+
+        test("bug report: Parrilla coreana 163k entre 4", () => {
+            const result = parseExpense("Parrilla coreana 163k entre 4");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.amount).toBe(163000);
+            expect(result.data.splitDivisor).toBe(4);
+            expect(result.data.description).toBe("parrilla coreana");
+            expect(result.data.category).toBe("food");
+        });
+
+        test("split with 'por' (comida 1000 por 2)", () => {
+            const result = parseExpense("comida 1000 por 2");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.amount).toBe(1000);
+            expect(result.data.splitDivisor).toBe(2);
+        });
+
+        test("split with 'entre' (comida 1000 entre 2)", () => {
+            const result = parseExpense("comida 1000 entre 2");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.amount).toBe(1000);
+            expect(result.data.splitDivisor).toBe(2);
+        });
+
+        test("complex split 'dividido entre 3' (160k dividido entre 3)", () => {
+            const result = parseExpense("parrilla coreana 160k dividido entre 3");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.amount).toBe(160000);
+            expect(result.data.splitDivisor).toBe(3);
+        });
     });
 
     describe("category auto-detection", () => {

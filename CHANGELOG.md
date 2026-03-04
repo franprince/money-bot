@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1] - 2026-03-04
+
+### Fixed
+- **Expense Parsing Bug**: Corrected an issue where expenses like "163k entre 4" were incorrectly parsed.
+    - Improved split detection to support `entre` and `por` keywords.
+    - Refined amount selection heuristic to prefer likely amounts (e.g., those with 'k' suffix or larger values) when multiple numbers are present.
+    - Added comprehensive unit tests for various split and amount formats.
+
 ## [1.2.0] - 2026-03-04
 
 ### Added

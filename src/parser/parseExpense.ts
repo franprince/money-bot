@@ -131,10 +131,10 @@ export function parseExpense(text: string): ParseResult | ParseFailure {
         }
     }
 
-    // 2. Split detection: "split X", "dividido X", "shared X", "compartido X"
+    // 2. Split detection: "split X", "dividido X", "shared X", "compartido X", "entre X", "por X"
     // We do this BEFORE tokenizing to protect the split number from being picked as the amount
     let splitDivisor: number | undefined;
-    const splitRegex = /(split|dividido|shared|compartido)(\s+(entre|por))?\s+(\d+)/i;
+    const splitRegex = /(split|dividido|shared|compartido|entre|por)(\s+(entre|por))?\s+(\d+)/i;
     const splitMatch = normalized.match(splitRegex);
 
     if (splitMatch) {
@@ -161,17 +161,25 @@ export function parseExpense(text: string): ParseResult | ParseFailure {
     let amount: number | null = null;
     let amountIndex = -1;
 
-    // Favor start or end of message for amount if multiple numbers are present
-    const indicesToCheck = [0, tokens.length - 1, ...Array.from({ length: tokens.length }, (_, i) => i).filter(i => i !== 0 && i !== tokens.length - 1)];
+    // Favor tokens that look like amounts (have 'k', currency symbols, or are larger numbers)
+    const candidates = tokens.map((t, i) => ({ token: t, index: i, parsed: parseAmount(t) }))
+        .filter(c => c.parsed !== null && c.parsed > 0);
 
-    for (const index of indicesToCheck) {
-        if (tokens[index] === undefined) continue;
-        const parsed = parseAmount(tokens[index]);
-        if (parsed !== null && parsed > 0) {
-            amount = parsed;
-            amountIndex = index;
-            break;
-        }
+    if (candidates.length > 0) {
+        // Heuristic:
+        // 1. Prefer tokens with 'k' or 'K'
+        // 2. Prefer larger numbers (unlikely to be a divisor or part of description)
+        // 3. Fallback to the first/last preference if still ambiguous
+        candidates.sort((a, b) => {
+            const aHasK = a.token.toLowerCase().includes("k");
+            const bHasK = b.token.toLowerCase().includes("k");
+            if (aHasK && !bHasK) return -1;
+            if (!aHasK && bHasK) return 1;
+            return (b.parsed || 0) - (a.parsed || 0);
+        });
+
+        amount = candidates[0].parsed;
+        amountIndex = candidates[0].index;
     }
 
     if (amount === null) {
