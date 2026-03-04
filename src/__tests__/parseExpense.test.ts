@@ -57,6 +57,20 @@ describe("parseExpense", () => {
             expect(result.data.amount).toBe(1500.5);
         });
 
+        test("Dot as thousand separator without decimal (AR format)", () => {
+            const result = parseExpense("comida 163.000");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.amount).toBe(163000);
+        });
+
+        test("Multiple thousand separators", () => {
+            const result = parseExpense("auto 1.250.000");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.amount).toBe(1250000);
+        });
+
         test("decimal amount", () => {
             const result = parseExpense("coffee 3.50");
             expect(result.success).toBe(true);

@@ -183,9 +183,15 @@ function parseAmount(token: string): number | null {
     const cleaned = token.replace(/[^\d.,]/g, "");
     if (!cleaned) return null;
 
-    // European format: "1.500,50" or plain "1500,50"
+    // European/AR format: "1.500,50" or plain "1500,50"
     if (/\d+\.\d{3},\d{1,2}$/.test(cleaned)) {
         const n = parseFloat(cleaned.replace(/\./g, "").replace(",", "."));
+        return isFinite(n) ? n : null;
+    }
+
+    // Dot as thousand separator (no decimals): "163.000" or "1.250.000"
+    if (/^\d{1,3}(\.\d{3})+$/.test(cleaned)) {
+        const n = parseFloat(cleaned.replace(/\./g, ""));
         return isFinite(n) ? n : null;
     }
 

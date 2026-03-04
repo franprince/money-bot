@@ -10,6 +10,17 @@ A Telegram bot to track your personal expenses via natural language messages.
 - 💱 **Multi-currency** support (ARS, USD, EUR, and more)
 - 🗑️ **Delete** individual expenses by ID
 - 🔒 Optional **user allowlist** to keep the bot private
+- 👥 **Group Support**: Track expenses in shared groups
+
+## Group Setup
+
+If you use the bot in a Telegram Group, you **must disable Privacy Mode** so the bot can see plain-text expense registrations.
+
+1. Message **@BotFather** on Telegram.
+2. Send `/setprivacy`.
+3. Select your bot.
+4. Choose **Disable**.
+5. (Optional) Make sure all group members' IDs are in `ALLOWED_USER_IDS` in your `.env` if you want to restrict access.
 
 ## Setup
 
