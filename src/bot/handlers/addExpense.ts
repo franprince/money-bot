@@ -1,4 +1,4 @@
-import type { Context } from "grammy";
+import { InlineKeyboard, type Context } from "grammy";
 import { parseExpense } from "../../parser/parseExpense";
 import { insertExpense } from "../../db/database";
 import { formatAmount } from "../../utils/formatters";
@@ -12,11 +12,41 @@ export async function handleAddExpense(ctx: Context): Promise<void> {
     const result = parseExpense(text);
 
     if (!result.success) {
-        // Silently ignore — the user may have sent a bot command or irrelevant text
         return;
     }
 
-    const { amount, currency, category, description } = result.data;
+    const { amount, currency, category, description, splitDivisor } = result.data;
+
+    if (splitDivisor && splitDivisor > 1) {
+        const perPerson = amount / splitDivisor;
+        const message =
+            `💸 *Gasto compartido detectado*\n\n` +
+            `Total: *${formatAmount(amount, currency)}*\n` +
+            `${splitDivisor} personas: *${formatAmount(perPerson, currency)}* cada una.\n\n` +
+            `¿Qué parte querés guardar?`;
+
+        const keyboard = new InlineKeyboard()
+            .text(
+                "Todo el gasto",
+                `split:all:${amount}:${currency}:${category || "none"}:${description || "none"}`
+            )
+            .row()
+            .text(
+                "Solo mi parte",
+                `split:me:${perPerson}:${currency}:${category || "none"}:${description || "none"}`
+            )
+            .row()
+            .text(
+                "Definir N partes",
+                `split:custom:${amount}:${splitDivisor}:${currency}:${category || "none"}:${description || "none"}`
+            );
+
+        await ctx.reply(message, {
+            parse_mode: "Markdown",
+            reply_markup: keyboard,
+        });
+        return;
+    }
 
     try {
         const expense = insertExpense({
@@ -34,6 +64,16 @@ export async function handleAddExpense(ctx: Context): Promise<void> {
             `✅ ¡Guardado!${descLabel}${categoryLabel}\n*${formatAmount(amount, currency)}* — ID #${expense.id}`,
             { parse_mode: "Markdown" }
         );
+
+        // Prompt for reminder
+        const reminderKeyboard = new InlineKeyboard()
+            .text("🔔 En 1h", `remind:1h:${description || "gasto"}`)
+            .text("⏰ Mañana", `remind:tomorrow:${description || "gasto"}`)
+            .text("❌ No", "remind:cancel");
+
+        await ctx.reply("¿Querés que te lo recuerde más tarde?", {
+            reply_markup: reminderKeyboard,
+        });
     } catch (error) {
         console.error("Error saving expense:", error);
         await ctx.reply("❌ No se pudo guardar el gasto. Por favor, intentá de nuevo.");

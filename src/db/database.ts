@@ -30,6 +30,16 @@ function migrate(database: Database): void {
       created_at  TEXT    NOT NULL
     )
   `);
+
+    database.run(`
+    CREATE TABLE IF NOT EXISTS reminders (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id     INTEGER NOT NULL,
+      message     TEXT    NOT NULL,
+      remind_at   TEXT    NOT NULL,
+      status      TEXT    NOT NULL DEFAULT 'pending'
+    )
+  `);
 }
 
 export interface InsertExpenseParams {
@@ -187,6 +197,47 @@ export function updateExpenseCategory(
         )
         .run({ $category: category, $id: expenseId, $userId: userId });
     return result.changes > 0;
+}
+
+export interface InsertReminderParams {
+    userId: number;
+    message: string;
+    remindAt: string;
+}
+
+export function insertReminder(params: InsertReminderParams): void {
+    const database = getDb();
+    const stmt = database.prepare(`
+    INSERT INTO reminders (user_id, message, remind_at)
+    VALUES ($userId, $message, $remindAt)
+  `);
+    stmt.run({
+        $userId: params.userId,
+        $message: params.message,
+        $remindAt: params.remindAt,
+    });
+}
+
+export function getPendingReminders(): {
+    id: number;
+    user_id: number;
+    message: string;
+    remind_at: string;
+}[] {
+    const database = getDb();
+    const now = new Date().toISOString();
+    return database
+        .prepare(
+            `SELECT id, user_id, message, remind_at FROM reminders WHERE status = 'pending' AND remind_at <= $now`
+        )
+        .all({ $now: now }) as any;
+}
+
+export function markReminderAsSent(id: number): void {
+    const database = getDb();
+    database
+        .prepare(`UPDATE reminders SET status = 'sent' WHERE id = ?`)
+        .run(id);
 }
 
 export function closeDb(): void {

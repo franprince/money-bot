@@ -85,6 +85,31 @@ describe("parseExpense", () => {
             expect(result.data.amount).toBe(500);
             expect(result.data.description).toBeNull();
         });
+
+        test("detect split divisor (dividido entre 2)", () => {
+            const result = parseExpense("1200 cena dividido entre 2");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.splitDivisor).toBe(2);
+            expect(result.data.description).toBe("cena");
+        });
+
+        test("detect split divisor (split 3)", () => {
+            const result = parseExpense("split 3 taxi 900");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.splitDivisor).toBe(3);
+            expect(result.data.amount).toBe(900);
+            expect(result.data.description).toBe("taxi");
+        });
+
+        test("detect split divisor (compartido por 4)", () => {
+            const result = parseExpense("$4000 asado compartido por 4");
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.splitDivisor).toBe(4);
+            expect(result.data.description).toBe("asado");
+        });
     });
 
     describe("category auto-detection", () => {

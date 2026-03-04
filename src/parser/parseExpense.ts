@@ -3,6 +3,7 @@ export interface ParsedExpense {
     currency: string;
     category: string | null;
     description: string | null;
+    splitDivisor?: number;
 }
 
 export interface ParseResult {
@@ -145,14 +146,26 @@ export function parseExpense(text: string): ParseResult | ParseFailure {
     }
 
     const descTokens = tokens.filter((_, i) => i !== amountIndex);
-    const descText = descTokens.join(" ").toLowerCase();
+    let descText = descTokens.join(" ").toLowerCase();
+
+    // Split detection: "split X", "dividido X", "shared X", "compartido X"
+    let splitDivisor: number | undefined;
+    const splitRegex = /(split|dividido|shared|compartido)(\s+(entre|por))?\s+(\d+)/i;
+    const splitMatch = descText.match(splitRegex);
+
+    if (splitMatch) {
+        splitDivisor = parseInt(splitMatch[4], 10);
+        // Remove the split part from description
+        descText = descText.replace(splitRegex, "").replace(/\s+/g, " ").trim();
+    }
+
+    const filteredDescTokens = descText.split(/\s+/).filter(Boolean);
 
     // Try to detect category from description tokens
     let category: string | null = null;
-    for (const token of descTokens) {
-        const lower = token.toLowerCase();
-        if (KNOWN_CATEGORIES[lower]) {
-            category = KNOWN_CATEGORIES[lower];
+    for (const token of filteredDescTokens) {
+        if (KNOWN_CATEGORIES[token]) {
+            category = KNOWN_CATEGORIES[token];
             break;
         }
     }
@@ -164,6 +177,7 @@ export function parseExpense(text: string): ParseResult | ParseFailure {
             currency: detectedCurrency,
             category,
             description: descText || null,
+            splitDivisor,
         },
     };
 }

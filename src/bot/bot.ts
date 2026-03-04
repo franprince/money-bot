@@ -11,6 +11,7 @@ import { handleList } from "./handlers/list";
 import { handleDelete } from "./handlers/delete";
 import { handleEdit } from "./handlers/edit";
 import { handleHelp } from "./handlers/help";
+import { handleCallbackQuery } from "./handlers/callbackHandlers";
 
 export function createBot(token: string): Bot {
     const bot = new Bot(token);
@@ -37,6 +38,7 @@ export function createBot(token: string): Bot {
     bot.command(["lista", "list"], handleList);
     bot.command(["borrar", "delete"], handleDelete);
     bot.command(["editar", "edit"], handleEdit);
+    bot.on("callback_query:data", handleCallbackQuery);
 
     // Plain text messages → try to parse as expense
     bot.on("message:text", handleAddExpense);

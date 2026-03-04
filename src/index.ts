@@ -1,4 +1,5 @@
 import { createBot } from "./bot/bot";
+import { startRemindersWorker } from "./bot/remindersWorker";
 
 const token = process.env.BOT_TOKEN;
 if (!token) {
@@ -9,6 +10,7 @@ if (!token) {
 console.log("🤖 Starting Money Bot...");
 
 const bot = createBot(token);
+startRemindersWorker(bot);
 
 // Graceful shutdown
 process.once("SIGINT", () => {
