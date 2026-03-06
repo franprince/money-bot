@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.2] - 2026-03-05
+
+### Fixed
+- **GrammyError in Callbacks**: Fixed a crash when a message was edited with identical content.
+    - Consolidated duplicate reminder callback handlers.
+    - Added safety check to ignore "message is not modified" errors from Telegram API.
+- **Instance Management**: Improved PID check to prevent the bot from terminating itself if its PID matches the one in `bot.pid` (common in Docker/Coolify).
+- **Graceful Shutdown**: Ensured PID file is cleaned up correctly on SIGINT/SIGTERM.
+
+### Added
+- **Callback Handler Tests**: Added unit tests for callback queries and error handling.
+
 ## [1.2.1] - 2026-03-04
 
 ### Fixed
