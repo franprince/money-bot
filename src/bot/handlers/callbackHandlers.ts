@@ -103,7 +103,12 @@ export async function handleCallbackQuery(ctx: Context): Promise<void> {
         const messageText = rest.join(":");
 
         if (time === "cancel") {
-            await ctx.editMessageText("Ok, no habrá recordatorio.");
+            try {
+                await ctx.editMessageText("Ok, no habrá recordatorio.");
+            } catch (e: any) {
+                if (e.description?.includes("message is not modified")) return;
+                throw e;
+            }
             return;
         }
 
@@ -117,6 +122,10 @@ export async function handleCallbackQuery(ctx: Context): Promise<void> {
             remindAt.setDate(remindAt.getDate() + 1);
             remindAt.setHours(9, 0, 0, 0); // 9 AM tomorrow
             timeLabel = "mañana a las 9:00";
+        } else if (time.endsWith("h")) {
+            const hours = parseInt(time.replace("h", ""), 10);
+            remindAt.setHours(remindAt.getHours() + hours);
+            timeLabel = `en ${hours} hora${hours > 1 ? "s" : ""}`;
         }
 
         insertReminder({
@@ -125,7 +134,13 @@ export async function handleCallbackQuery(ctx: Context): Promise<void> {
             remindAt: remindAt.toISOString(),
         });
 
-        await ctx.editMessageText(`✅ Te recordaré "${messageText}" ${timeLabel}.`);
+        try {
+            await ctx.editMessageText(`✅ Te recordaré "${messageText}" ${timeLabel}.`);
+        } catch (e: any) {
+            if (e.description?.includes("message is not modified")) return;
+            throw e;
+        }
+        return;
     }
 
     // Custom reminder submenu: remind_custom:message
@@ -170,36 +185,5 @@ export async function handleCallbackQuery(ctx: Context): Promise<void> {
         });
         await ctx.answerCallbackQuery();
         return;
-    }
-
-    if (data.startsWith("remind:")) {
-        const [, time, ...rest] = data.split(":");
-        const messageText = rest.join(":");
-
-        if (time === "cancel") {
-            await ctx.editMessageText("Ok, no habrá recordatorio.");
-            return;
-        }
-
-        let remindAt = new Date();
-        let timeLabel = "";
-
-        if (time.endsWith("h")) {
-            const hours = parseInt(time.replace("h", ""), 10);
-            remindAt.setHours(remindAt.getHours() + hours);
-            timeLabel = `en ${hours} hora${hours > 1 ? "s" : ""}`;
-        } else if (time === "tomorrow") {
-            remindAt.setDate(remindAt.getDate() + 1);
-            remindAt.setHours(9, 0, 0, 0); // 9 AM tomorrow
-            timeLabel = "mañana a las 9:00";
-        }
-
-        insertReminder({
-            userId,
-            message: `Recordatorio: ${messageText}`,
-            remindAt: remindAt.toISOString(),
-        });
-
-        await ctx.editMessageText(`✅ Te recordaré "${messageText}" ${timeLabel}.`);
     }
 }
