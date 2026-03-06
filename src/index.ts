@@ -23,7 +23,7 @@ const PID_FILE = join(DATA_DIR, "bot.pid");
 if (existsSync(PID_FILE)) {
     try {
         const oldPid = parseInt(readFileSync(PID_FILE, "utf-8"), 10);
-        if (!isNaN(oldPid)) {
+        if (!isNaN(oldPid) && oldPid !== process.pid) {
             console.log(`⚠️ Previous instance found with PID ${oldPid}. Terminating...`);
             try {
                 process.kill(oldPid, "SIGTERM");
